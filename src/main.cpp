@@ -148,25 +148,27 @@ enum MAINSTATE{WARMUP,SEND};
 MAINSTATE main_state = MAINSTATE::WARMUP;
 unsigned long int timerr = 0;
 void loop() {
-    mqtt.loop();
-    switch (main_state)
-    {
-      case MAINSTATE::WARMUP:{
-        if(timerr > millis()){
-         main_state = MAINSTATE::SEND;
-         external_state(1);
-         timerr = millis() + WARMUP_INTERVAL;
-        }
-        break;
+  if(!network_connect()) return;
+  
+  mqtt.loop();
+  switch (main_state)
+  {
+    case MAINSTATE::WARMUP:{
+      if(timerr > millis()){
+        main_state = MAINSTATE::SEND;
+        external_state(1);
+        timerr = millis() + WARMUP_INTERVAL;
       }
-      case MAINSTATE::SEND:{
-        if(timerr > millis()){
-          mqtt.publish(PUBLISH_TOPIC,senor_json_data().c_str());
-          main_state= MAINSTATE::WARMUP;
-          external_state(0);
-          timerr = millis() + READING_INTERVAL;
-        }
-        break;
-      }
+      break;
     }
+    case MAINSTATE::SEND:{
+      if(timerr > millis()){
+        mqtt.publish(PUBLISH_TOPIC,senor_json_data().c_str());
+        main_state= MAINSTATE::WARMUP;
+        external_state(0);
+        timerr = millis() + READING_INTERVAL;
+      }
+      break;
+    }
+  }
 } 
