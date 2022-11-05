@@ -123,7 +123,7 @@ boolean network_connect(){
   }
   if(!mqtt.connected()){
     SerialMon.println("Connecting to "+ String(BROKER));
-    if (!mqtt.connect("kjdsahfgldsfgdfslkajh")) {
+    if (!mqtt.connect(TOKEN)) {
       return false;
     }
     mqtt.subscribe(SUBSCRIBE_TOPIC);
