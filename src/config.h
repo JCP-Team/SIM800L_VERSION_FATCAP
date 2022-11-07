@@ -9,13 +9,13 @@
 #define PUBLISH_TOPIC "0001/data"
 #define SUBSCRIBE_TOPIC "0001/data"
 #define SUBSCRIBE_RESPOND_TOPIC "0001/data"
-#define APN "Vodacom"
+#define APN "afrihost" // "Vodacom"
 #define BROKER "test.mosquitto.org"
 #define PORT 1883
 #define TOKEN "secret"
 #define APP_VERSION "ccfccnadblapdp7slkg0-v1"
-#define RELAY_PIN 0
-#define BATTERY_PIN 0
+#define RELAY_PIN 10 //gp10: pin 14
+#define BATTERY_PIN 28 //gp28: pin 34
 #define READING_INTERVAL 30000
 #define WARMUP_INTERVAL 2*1000*60
 
@@ -30,5 +30,5 @@ float ambientTemperature;
 float vocIndex;
 float noxIndex;
 
-uint16_t error;
+uint16_t s_error;
 char errorMessage[256];
