@@ -13,6 +13,10 @@ TinyGsm        modem(SerialAT);
 TinyGsmClient client(modem);
 PubSubClient  mqtt(client);
 
+int batt_mv(){
+ return (3300/4095) *((1+2.7)/2.7); 
+}
+
 SensirionI2CSen5x sen55;
 void external_state(bool in){ //switches relay ON/OFF
     if(in) digitalWrite(RELAY_PIN, HIGH);
@@ -23,7 +27,9 @@ String senor_json_data(){
     scd30.initialize();
     scd30.setAutoSelfCalibration(1);
 
-    StaticJsonDocument<436> doc; //300+8+128
+    StaticJsonDocument<442> doc; //300+8+128 +8
+    //batt
+    doc["Battery_voltage"] = batt_mv();
     //scd30 data
     float result[3] = {0};
     if (scd30.isAvailable()) {
