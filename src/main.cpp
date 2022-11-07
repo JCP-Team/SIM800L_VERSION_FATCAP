@@ -14,7 +14,8 @@ TinyGsmClient client(modem);
 PubSubClient  mqtt(client);
 
 int batt_mv(){
- return (3300/4095) *((1+2.7)/2.7); 
+ 
+ return analogRead(BATTERY_PIN)*(3300/4095) *((1+2.7)/2.7); 
 }
 
 SensirionI2CSen5x sen55;

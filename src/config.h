@@ -19,7 +19,7 @@
 #define READING_INTERVAL 30000
 #define WARMUP_INTERVAL 2*1000*60
 
-float_t batt_v = 0;
+
 float_t err = 0;
 float massConcentrationPm1p0;
 float massConcentrationPm2p5;
