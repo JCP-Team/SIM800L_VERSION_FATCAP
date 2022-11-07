@@ -159,25 +159,24 @@ void loop() {
     mqtt.publish(PUBLISH_TOPIC,"{\"temperature\":10}");
     Serial.println("published");
   }
-
-//   switch (main_state)
-//   {
-//     case MAINSTATE::WARMUP:{
-//       if(timerr < millis()){
-//         main_state = MAINSTATE::SEND;
-//         external_state(1);
-//         timerr = millis() + WARMUP_INTERVAL;
-//       }
-//       break;
-//     }
-//     case MAINSTATE::SEND:{
-//       if(timerr < millis()){
-//         mqtt.publish(PUBLISH_TOPIC,senor_json_data().c_str());
-//         main_state= MAINSTATE::WARMUP;
-//         external_state(0);
-//         timerr = millis() + READING_INTERVAL;
-//       }
-//       break;
-//     }
-//   }
+  switch (main_state)
+  {
+    case MAINSTATE::WARMUP:{
+      if(timerr < millis()){
+        main_state = MAINSTATE::SEND;
+        external_state(1);
+        timerr = millis() + WARMUP_INTERVAL;
+      }
+      break;
+    }
+    case MAINSTATE::SEND:{
+      if(timerr < millis()){
+        mqtt.publish(PUBLISH_TOPIC,senor_json_data().c_str());
+        main_state= MAINSTATE::WARMUP;
+        external_state(0);
+        timerr = millis() + READING_INTERVAL;
+      }
+      break;
+    }
+  }
 } 
