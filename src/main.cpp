@@ -19,70 +19,12 @@ void external_state(bool in){ //switches relay ON/OFF
     else digitalWrite(RELAY_PIN,LOW);
 }
 
-String senor_json_data(){
-    scd30.initialize();
-    scd30.setAutoSelfCalibration(1);
-
-    StaticJsonDocument<436> doc; //300+8+128
-    //scd30 data
-    float result[3] = {0};
-    if (scd30.isAvailable()) {
-        scd30.getCarbonDioxideConcentration(result);   
-        doc["carbon_dioxide"] = result[0];
-        doc["Temperature"] = result[1];
-        doc["Humidity"] = result[2];   
-    }
-    //scd30 data end
-    //SEN55 data start
-    s_error = sen55.readMeasuredValues(
-        massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0,
-        massConcentrationPm10p0, ambientHumidity, ambientTemperature, vocIndex,
-        noxIndex);
-
-    if (s_error) {
-        Serial.print("s_error trying to execute readMeasuredValues(): ");
-        errorToString(s_error, errorMessage, 256);
-        Serial.println(errorMessage);
-    } else {
-        doc["MassConcentrationPm1p0"]=massConcentrationPm1p0;
-        doc["MassConcentrationPm2p5"]=massConcentrationPm2p5;
-        doc["MassConcentrationPm4p0"]=massConcentrationPm4p0;
-        doc["MassConcentrationPm10p0"]=massConcentrationPm10p0;
-        if (isnan(ambientHumidity)) {
-            doc["AmbientHumidity"]="n/a";
-        } else {
-            doc["AmbientHumidity"]=(ambientHumidity);
-        }
-        if (isnan(ambientTemperature)) {
-            doc["AmbientTemperature"]="n/a";
-        } else {
-            doc["AmbientTemperature"]=ambientTemperature;
-        }
-        if (isnan(vocIndex)) {
-            doc["VocIndex"]="n/a";
-        } else {
-            doc["VocIndex"]=vocIndex;
-        }
-        if (isnan(noxIndex)) {
-            doc["NoxIndex"]="n/a";
-        } else {
-            doc["NoxIndex"]=noxIndex;
-        }
-    }
-    
-    //SEN55 data end
-    
-    String data;
-    serializeJson(doc,data);
-
-    return data;
-}
-
 void sensor_setup(){
-    pinMode(RELAY_PIN, OUTPUT);
-    pinMode(BATTERY_PIN, INPUT);
-    Wire.begin();
-    sen55.begin(Wire);
+    Wire1.setSCL(I2C_SCL);
+    Wire1.setSDA(I2C_SDA);
+    Wire1.begin();
+   
+    sen55.begin(Wire1);
     s_error = sen55.deviceReset();
     if (s_error) {
         Serial.print("Error trying to execute deviceReset(): ");
@@ -98,6 +40,63 @@ void sensor_setup(){
     Serial.println("init success");
 }
 
+String senor_json_data(){
+    sensor_setup();
+    scd30.initialize();
+    scd30.setAutoSelfCalibration(1);
+
+    StaticJsonDocument<1024> doc;
+    //scd30 data
+    float result[3] = {0};
+    if (scd30.isAvailable()) {
+        scd30.getCarbonDioxideConcentration(result);   
+        doc["a"] = result[0];
+        doc["b"] = result[1];
+        doc["c"] = result[2];   
+    }
+    //scd30 data end
+    //SEN55 data start
+    s_error = sen55.readMeasuredValues(
+        massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0,
+        massConcentrationPm10p0, ambientHumidity, ambientTemperature, vocIndex,
+        noxIndex);
+
+    if (s_error) {
+        Serial.print("s_error trying to execute readMeasuredValues(): ");
+        errorToString(s_error, errorMessage, 256);
+        Serial.println(errorMessage);
+    } else {
+        doc["d"]= round(massConcentrationPm1p0*100)/100;
+        doc["e"]=round(massConcentrationPm2p5*100)/100;
+        doc["f"]=round(massConcentrationPm4p0*100)/100;
+        doc["g"]=round(massConcentrationPm10p0*100)/100;
+        if (isnan(ambientHumidity)) {
+            doc["h"]=0;
+        } else {
+            doc["h"]=round(ambientHumidity*100)/100;
+        }
+        if (isnan(ambientTemperature)) {
+            doc["i"]=0;
+        } else {
+            doc["i"]=round(ambientTemperature*100)/100;
+        }
+        if (isnan(vocIndex)) {
+            doc["j"]=0;
+        } else {
+            doc["j"]=vocIndex;
+        }
+        if (isnan(noxIndex)) {
+            doc["k"]=0;
+        } else {
+            doc["k"]=noxIndex;
+        }
+    }
+    //SEN55 data end
+    String data;
+    serializeJson(doc,data);
+    Wire1.end();
+    return data;
+}
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
   String msg;
@@ -128,7 +127,7 @@ boolean network_connect(){
     if (!mqtt.connect(TOKEN)) {
       return false;
     }
-    mqtt.subscribe(SUBSCRIBE_TOPIC);
+    // mqtt.subscribe(SUBSCRIBE_TOPIC);
     Serial.println("CONNECTED");
   }
   return true;
@@ -136,10 +135,11 @@ boolean network_connect(){
 
 void setup() {
   SerialMon.begin(115200);
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(BATTERY_PIN, INPUT);
   delay(4000);
   Serial2.setTX(4);
   Serial2.setRX(5);
-  // sensor_setup();
   TinyGsmAutoBaud(SerialAT, 9600, 115200);
   delay(6000);
   SerialMon.println("Initializing modem...");
@@ -154,25 +154,29 @@ unsigned long int timerr = 0;
 void loop() {
   if(!network_connect()) return;
   mqtt.loop();
-  if(timerr < millis()){
-    timerr = millis() + 5000;
-    mqtt.publish(PUBLISH_TOPIC,"{\"temperature\":10}");
-    Serial.println("published");
-  }
+  // if(timerr < millis()){
+  //   timerr = millis() + 5000;
+  //   mqtt.publish(PUBLISH_TOPIC,"{\"temperature\":10}");
+  //   Serial.println("published");
+  // }
   switch (main_state)
   {
     case MAINSTATE::WARMUP:{
       if(timerr < millis()){
         main_state = MAINSTATE::SEND;
-        external_state(1);
+       external_state(1);
+        Serial.println("Warming up,relay is on");
         timerr = millis() + WARMUP_INTERVAL;
       }
       break;
     }
     case MAINSTATE::SEND:{
       if(timerr < millis()){
-        mqtt.publish(PUBLISH_TOPIC,senor_json_data().c_str());
+        String data = "["+senor_json_data()+"]";
+        mqtt.publish(PUBLISH_TOPIC,data.c_str());
+        Serial.println(data);
         main_state= MAINSTATE::WARMUP;
+        Serial.println("Published,relay is off");
         external_state(0);
         timerr = millis() + READING_INTERVAL;
       }
