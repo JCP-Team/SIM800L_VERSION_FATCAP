@@ -1,4 +1,5 @@
 #include "config.h"
+
  
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
@@ -33,14 +34,14 @@ String senor_json_data(){
     }
     //scd30 data end
     //SEN55 data start
-    error = sen55.readMeasuredValues(
+    s_error = sen55.readMeasuredValues(
         massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0,
         massConcentrationPm10p0, ambientHumidity, ambientTemperature, vocIndex,
         noxIndex);
 
-    if (error) {
-        Serial.print("Error trying to execute readMeasuredValues(): ");
-        errorToString(error, errorMessage, 256);
+    if (s_error) {
+        Serial.print("s_error trying to execute readMeasuredValues(): ");
+        errorToString(s_error, errorMessage, 256);
         Serial.println(errorMessage);
     } else {
         doc["MassConcentrationPm1p0"]=massConcentrationPm1p0;
@@ -82,16 +83,16 @@ void sensor_setup(){
     pinMode(BATTERY_PIN, INPUT);
     Wire.begin();
     sen55.begin(Wire);
-    error = sen55.deviceReset();
-    if (error) {
+    s_error = sen55.deviceReset();
+    if (s_error) {
         Serial.print("Error trying to execute deviceReset(): ");
-        errorToString(error, errorMessage, 256);
+        errorToString(s_error, errorMessage, 256);
         Serial.println(errorMessage);
     }
-    error = sen55.startMeasurement();
-    if (error) {
+    s_error = sen55.startMeasurement();
+    if (s_error) {
         Serial.print("Error executing startMeasurement(): ");
-        errorToString(error, errorMessage, 256);
+        errorToString(s_error, errorMessage, 256);
         Serial.println(errorMessage);
     }
 }
