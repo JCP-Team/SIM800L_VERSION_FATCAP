@@ -4,21 +4,17 @@
 #define TINY_GSM_MODEM_SIM800
 #define SerialMon Serial
 // SoftwareSerial SerialAT = SoftwareSerial(5,4);
-#define SerialAT Serial2
+#define SerialAT Serial1 //??
 #define TINY_GSM_DEBUG SerialMon
 
 
-#define TOKEN "hYVuk5muwL"
-#define APP_VERSION "cdj4beidblav5plmgukg-01"
-#define PUBLISH_TOPIC "kp1/" APP_VERSION "/dcx/" TOKEN "/json"
-#define SUBSCRIBE_TOPIC "kp1/" APP_VERSION "/cex/" TOKEN "/command/relay/status"
-#define SUBSCRIBE_RESPOND_TOPIC "kp1/" APP_VERSION "/cex/" TOKEN "/result/relay"
+#define SUBSCRIBE_TOPIC "GDRT-2022"
 #define APN "Vodacom"
-#define BROKER "mqtt.cloud.kaaiot.com"
+#define BROKER "test.mosquitto.org" 
 #define PORT 1883
 
-#define RELAY_PIN 10 //gp10: pin 14
-#define BATTERY_PIN 28 //gp28: pin 34
+#define RELAY_PIN 2 //PIN 4: GPIO2
+#define BATTERY_PIN 26 //PIN 31
 #define READING_INTERVAL 30000
 #define WARMUP_INTERVAL 2*1000*60
 
