@@ -34,9 +34,9 @@ String senor_json_data(){
     float result[3] = {0};
     if (scd30.isAvailable()) {
         scd30.getCarbonDioxideConcentration(result);   
-        doc["carbon_dioxide"] = result[0];
-        doc["Temperature"] = result[1];
-        doc["Humidity"] = result[2];   
+        doc["CO2"] = ((float)((int)(result[0]*100)))/100;
+        doc["Temp"] = ((float)((int)(result[1]*100)))/100;
+        doc["Hum"] = ((float)((int)(result[2]*100)))/100;   
     }
     //scd30 data end
     //SEN55 data start
@@ -50,29 +50,29 @@ String senor_json_data(){
         errorToString(s_error, errorMessage, 256);
         Serial.println(errorMessage);
     } else {
-        doc["MassConcentrationPm1p0"]=massConcentrationPm1p0;
-        doc["MassConcentrationPm2p5"]=massConcentrationPm2p5;
-        doc["MassConcentrationPm4p0"]=massConcentrationPm4p0;
-        doc["MassConcentrationPm10p0"]=massConcentrationPm10p0;
+        doc["Pm1p0"]=((float)((int)(massConcentrationPm1p0*100)))/100;
+        doc["Pm2p5"]=((float)((int)(massConcentrationPm2p5*100)))/100;
+        doc["Pm4p0"]=((float)((int)(massConcentrationPm4p0*100)))/100;
+        doc["Pm10p0"]=((float)((int)(massConcentrationPm10p0*100)))/100;
         if (isnan(ambientHumidity)) {
-            doc["AmbientHumidity"]="n/a";
+            doc["AH"]="n/a";
         } else {
-            doc["AmbientHumidity"]=(ambientHumidity);
+            doc["AH"]=((float)((int)(ambientHumidity*100)))/100;;
         }
         if (isnan(ambientTemperature)) {
-            doc["AmbientTemperature"]="n/a";
+            doc["ATemp"]="n/a";
         } else {
-            doc["AmbientTemperature"]=ambientTemperature;
+            doc["ATemp"]=((float)((int)(ambientTemperature*100)))/100;;
         }
         if (isnan(vocIndex)) {
             doc["VocIndex"]="n/a";
         } else {
-            doc["VocIndex"]=vocIndex;
+            doc["VocIndex"]=((float)((int)(vocIndex*100)))/100;;
         }
         if (isnan(noxIndex)) {
             doc["NoxIndex"]="n/a";
         } else {
-            doc["NoxIndex"]=noxIndex;
+            doc["NoxIndex"]=((float)((int)(noxIndex*100)))/100;;
         }
     }
     
@@ -80,7 +80,7 @@ String senor_json_data(){
     
     String data;
     serializeJson(doc,data);
-
+    Wire.end();
     return data;
 }
 
@@ -159,15 +159,17 @@ void setup() {
   modem.init();
   mqtt.setServer(BROKER, PORT);
   mqtt.setCallback(mqttCallback);
-
 }
 
 enum MAINSTATE{WARMUP,SEND};
 MAINSTATE main_state = MAINSTATE::WARMUP;
 unsigned long int timerr = 0;
+
 void loop() {
   if(!network_connect()) return;
   mqtt.loop();
+  // Serial.println("State:"+String(main_state));
+  // Serial.println("Millis:"+String(millis()));
   switch (main_state)
   {
     case MAINSTATE::WARMUP:{
@@ -184,7 +186,11 @@ void loop() {
     case MAINSTATE::SEND:{
       if(timerr < millis()){
         Serial.println("sending data");
-        mqtt.publish(PUBLISH_TOPIC,senor_json_data().c_str());
+        String data = senor_json_data();
+        Serial.println(data);
+        // Serial.println(senor_json_data());
+        mqtt.publish(PUBLISH_TOPIC,data.c_str());
+        mqtt.publish(PUBLISH_TOPIC,"Hello world");
         main_state= MAINSTATE::WARMUP;
         external_state(0);
         timerr = millis() + READING_INTERVAL;
