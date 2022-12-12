@@ -9,12 +9,11 @@
 #include <SensirionI2CSen5x.h>
 
 
-TinyGsm        modem(SerialAT);
+TinyGsm       modem(SerialAT);
 TinyGsmClient client(modem);
 PubSubClient  mqtt(client);
 
 int batt_mv(){
- 
  return analogRead(BATTERY_PIN)*(3300/4095) *((1+2.7)/2.7); 
 }
 
@@ -86,8 +85,8 @@ String senor_json_data(){
 }
 
 void sensor_setup(){
-    pinMode(RELAY_PIN, OUTPUT);
-    pinMode(BATTERY_PIN, INPUT);
+    Wire.setSDA(SDA);
+    Wire.setSCL(SCL);
     Wire.begin();
     sen55.begin(Wire);
     s_error = sen55.deviceReset();
@@ -132,7 +131,7 @@ boolean network_connect(){
   }
   if(!mqtt.connected()){
     SerialMon.println("Connecting to "+ String(BROKER));
-    if (!mqtt.connect(TOKEN)) {
+    if (!mqtt.connect("SADASKHKHDADASD5514615616")) {
       return false;
     }
     mqtt.subscribe(SUBSCRIBE_TOPIC);
@@ -142,10 +141,17 @@ boolean network_connect(){
 }
 
 void setup() {
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(BATTERY_PIN, INPUT);
+  pinMode(RST,OUTPUT);
+  digitalWrite(RST,0);
+  delay(1000);
+  digitalWrite(RST,1);
+  delay(1000);
   SerialMon.begin(115200);
   delay(4000);
-  Serial2.setTX(4);
-  Serial2.setRX(5);
+  Serial2.setTX(TX);
+  Serial2.setRX(RX);
   // sensor_setup();
   TinyGsmAutoBaud(SerialAT, 9600, 115200);
   delay(6000);
@@ -153,6 +159,7 @@ void setup() {
   modem.init();
   mqtt.setServer(BROKER, PORT);
   mqtt.setCallback(mqttCallback);
+
 }
 
 enum MAINSTATE{WARMUP,SEND};
@@ -161,27 +168,27 @@ unsigned long int timerr = 0;
 void loop() {
   if(!network_connect()) return;
   mqtt.loop();
-  if(timerr < millis()){
-    timerr = millis() + 5000;
-    mqtt.publish(PUBLISH_TOPIC,"{\"temperature\":10}");
-    Serial.println("published");
-  }
   switch (main_state)
   {
     case MAINSTATE::WARMUP:{
       if(timerr < millis()){
         main_state = MAINSTATE::SEND;
         external_state(1);
+        delay(1000);
+        sensor_setup();
         timerr = millis() + WARMUP_INTERVAL;
+        Serial.println("warming up");
       }
       break;
     }
     case MAINSTATE::SEND:{
       if(timerr < millis()){
+        Serial.println("sending data");
         mqtt.publish(PUBLISH_TOPIC,senor_json_data().c_str());
         main_state= MAINSTATE::WARMUP;
         external_state(0);
         timerr = millis() + READING_INTERVAL;
+        Serial.println("turning off sensors");
       }
       break;
     }
