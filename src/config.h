@@ -4,14 +4,14 @@
 #define TINY_GSM_MODEM_SIM800
 #define SerialMon Serial
 // SoftwareSerial SerialAT = SoftwareSerial(5,4);
-#define SerialAT Serial2 //??
+#define SerialAT Serial2 
 #define TINY_GSM_DEBUG SerialMon
 
-
+#define DEVICE_ID "SENSOR STATION XXXX" //Update
 #define SUBSCRIBE_TOPIC "GDRT-2022/CMD"
 #define PUBLISH_TOPIC "GDRT-2022/DATA"
 #define APN "Vodacom"
-#define BROKER "test.mosquitto.org" 
+#define BROKER "test.mosquitto.org" //update
 #define PORT 1883
 
 #define SDA 0 
